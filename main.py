@@ -25,7 +25,6 @@ def create_user(user):
 
     try:
         data = cur.execute(f"SELECT * FROM users WHERE username='{user.username}';")
-        print(len(data.fetchall()))
         if len(data.fetchall()) == 0:
             cur.execute(f"INSERT INTO users(username, password) values ('{user.username}', '{user.password}');")
             conn.commit()
@@ -50,8 +49,7 @@ def login():
         return False
 
 def clear():
-    #os.system('clear')
-    pass
+    os.system('clear')
 
 def print_menu(isLoggedIn):
     t = pyfiglet.figlet_format("Password Manager")
@@ -79,12 +77,12 @@ def fetch_passwords(user):
         data = cur.execute(f"SELECT company_name as company, password, last_updated FROM password WHERE userID={user._id}")
         data = data.fetchall()
 
-        show_passwords(data)
+        show_passwords(data, user)
         conn.close()
     except Exception as e:
         print(e)
 
-def show_passwords(data):
+def show_passwords(data, user):
     key = user.generate_key()
     cipher = Fernet(key)
 
@@ -95,7 +93,6 @@ def show_passwords(data):
 
 def add_password(user):
     key = user.generate_key()
-    print(key)
     cipher = Fernet(key)
     company_name = input("Please enter a company: ")
     passwd = cipher.encrypt(getpass.getpass("Please enter the password: ").encode())
@@ -105,50 +102,111 @@ def add_password(user):
 
     try:
         cur.execute(f"""INSERT INTO password(company_name, password, last_updated, userID) 
-                    VALUES(?,?,?,?);""", (company_name, passwd, datetime.now(), user._id))
+                    VALUES(?,?,?,?);""", (company_name, passwd, str(datetime.now()), user._id))
         conn.commit()
         conn.close()
     except Exception as e:
         print(e)
         conn.close()    
 
-try:
-    test = open("passwords.db", 'rb')
-except:
-    create_database(db)
 
 
-isLoggedIn = False
-while True:
-    print_menu(isLoggedIn)
-    choice = int(input("> "))
+def delete_password(user):
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
 
-    if not isLoggedIn:
-        if choice == 1:
-            user = login()
-            if user != False:
-                isLoggedIn = True
-        elif choice == 2:
-            u = input("Please enter a username: ")
-            p = getpass.getpass("Please enter a password: ")
-            p2 = getpass.getpass("Please confirm password: ")
+    company_name = input("Please enter the company associated with the password you'd like to delete: ")
 
-            if p == p2:
-                user = User(u, p)
-                create_user(user)
-                input()
-            else:
-                print("Passwords do not match.")
-                input("Press enter to continue...")
-                print_menu(isLoggedIn)
-        elif choice == 3:
-            print("Quitting...")
-            break
-    else:
-        if choice == 1:
-            fetch_passwords(user)
-        elif choice == 2:
-            print(user.password)
-            add_password(user)
-        elif choice == 5:
-            isLoggedIn = False
+    try:
+        cur.execute(f"DELETE FROM password WHERE company_name='{company_name}' AND userID={user._id}")
+        conn.commit()
+        print(f"{company_name} has been deleted.")
+    except Exception as e:
+        print(f"{company_name} could not be deleted:")
+        print(e)
+
+    
+    conn.close()
+    
+
+def update_password(user):
+    # UPDATE password SET password={new_password} WHERE company_name='{company_name}' AND userID={user._id};
+    key = user.generate_key()
+    cipher = Fernet(key)
+    company_name = input("Please enter a company: ")
+    new_passwd = cipher.encrypt(getpass.getpass("Please enter the new password: ").encode())
+
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+
+    try:
+        cur.execute(f"""UPDATE password SET password=?, last_updated=? where company_name=? AND userID=?;""", (new_passwd, str(datetime.now()), company_name, user._id))
+        conn.commit()
+        print("Password has been updated successfully!")
+        conn.close()
+    except Exception as e:
+        print("UNABLE TO UPDATE:")
+        print(e)
+        conn.close()  
+
+
+def main():
+    user = None
+    try:
+        test = open("passwords.db", 'rb')
+    except:
+        create_database(db)
+
+
+    isLoggedIn = False
+    while True:
+        print_menu(isLoggedIn)
+        choice = int(input("> "))
+
+        if not isLoggedIn:
+            if choice == 1:
+                clear()
+                user = login()
+                if user != False:
+                    isLoggedIn = True
+            elif choice == 2:
+                clear()
+                u = input("Please enter a username: ")
+                p = getpass.getpass("Please enter a password: ")
+                p2 = getpass.getpass("Please confirm password: ")
+
+                if p == p2:
+                    user = User(u, p)
+                    create_user(user)
+                    input()
+                else:
+                    print("Passwords do not match.")
+                    input("Press enter to continue...")
+                    print_menu(isLoggedIn)
+            elif choice == 3:
+                clear()
+                print("Quitting...")
+                break
+        else:
+            if choice == 1:
+                clear()
+                fetch_passwords(user)
+                input("Please press enter to coninue...")   
+            elif choice == 2:
+                clear()
+                add_password(user)
+                input("Please press enter to coninue...")
+            elif choice == 3:
+                clear()
+                update_password(user)
+                input("Please press enter to coninue...")
+            elif choice == 4:
+                clear()
+                delete_password(user)
+                input("Please press enter to coninue...")
+            elif choice == 5:
+                isLoggedIn = False
+
+
+if __name__ == "__main__":
+    main()
