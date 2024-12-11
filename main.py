@@ -184,8 +184,8 @@ def main():
                     input("Press enter to continue...")
                     print_menu(isLoggedIn)
             elif choice == 3:
-                clear()
                 print("Quitting...")
+                clear()
                 break
         else:
             if choice == 1:
