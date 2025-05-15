@@ -8,7 +8,7 @@ class User:
         self.password = hashlib.sha256(password.encode()).hexdigest()
         self._id = self.set_id()
 
-
+    # Why is this set ID? Its verifying the password you dummy
     def set_id(self):
         conn = sqlite3.connect("passwords.db")
         cur = conn.cursor()
