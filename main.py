@@ -3,6 +3,7 @@ import sqlite3
 import getpass
 import os
 import pyfiglet
+import random
 from cryptography.fernet import Fernet
 import base64
 from datetime import datetime
@@ -95,7 +96,13 @@ def add_password(user):
     key = user.generate_key()
     cipher = Fernet(key)
     company_name = input("Please enter a company: ")
-    passwd = cipher.encrypt(getpass.getpass("Please enter the password: ").encode())
+
+    conf = input("Would you like to generate a password?: ")
+    passwd = ""
+    if conf.lower() == 'y':
+        passwd = cipher.encrypt(generate_password().encode())
+    else:
+        passwd = cipher.encrypt(getpass.getpass("Please enter the password: ").encode())
 
     conn = sqlite3.connect(db)
     cur = conn.cursor()
@@ -149,6 +156,12 @@ def update_password(user):
         print(e)
         conn.close()  
 
+def generate_password():
+    p = ""
+    for i in range(16):
+        p += chr(random.randint(33,126))
+
+    return p
 
 def main():
     user = None
