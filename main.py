@@ -27,7 +27,8 @@ def create_user(user):
     try:
         data = cur.execute(f"SELECT * FROM users WHERE username='{user.username}';")
         if len(data.fetchall()) == 0:
-            cur.execute(f"INSERT INTO users(username, password) values ('{user.username}', '{user.password}');")
+            #cur.execute(f"INSERT INTO users(username, password) values ('{user.username}', '{user.password}');")
+            cur.execute(f"""INSERT INTO users(username, password) values (?, ?);""", (user.username, user.password))
             conn.commit()
         else:
             print("Username is taken.")
@@ -75,7 +76,7 @@ def fetch_passwords(user):
     cur = conn.cursor()
 
     try:
-        data = cur.execute(f"SELECT company_name as company, password, last_updated FROM password WHERE userID={user._id}")
+        data = cur.execute(f"SELECT company_name as company, password, last_updated FROM password WHERE userID=?", (user._id,))
         data = data.fetchall()
 
         show_passwords(data, user)
@@ -125,7 +126,7 @@ def delete_password(user):
     company_name = input("Please enter the company associated with the password you'd like to delete: ")
 
     try:
-        cur.execute(f"DELETE FROM password WHERE company_name='{company_name}' AND userID={user._id}")
+        cur.execute(f"DELETE FROM password WHERE company_name=? AND userID=?", (company_name, user._id))
         conn.commit()
         print(f"{company_name} has been deleted.")
     except Exception as e:
