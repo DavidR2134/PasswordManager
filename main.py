@@ -25,9 +25,8 @@ def create_user(user):
     cur = conn.cursor()
 
     try:
-        data = cur.execute(f"SELECT * FROM users WHERE username='{user.username}';")
+        data = cur.execute(f"SELECT * FROM users WHERE username=?;", (user.username,))
         if len(data.fetchall()) == 0:
-            #cur.execute(f"INSERT INTO users(username, password) values ('{user.username}', '{user.password}');")
             cur.execute(f"""INSERT INTO users(username, password) values (?, ?);""", (user.username, user.password))
             conn.commit()
         else:
@@ -138,7 +137,6 @@ def delete_password(user):
     
 
 def update_password(user):
-    # UPDATE password SET password={new_password} WHERE company_name='{company_name}' AND userID={user._id};
     key = user.generate_key()
     cipher = Fernet(key)
     company_name = input("Please enter a company: ")
